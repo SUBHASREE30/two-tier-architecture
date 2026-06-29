@@ -1,22 +1,18 @@
 <?php
-$url = getenv('MYSQL_URL') ?: getenv('MYSQL_PUBLIC_URL') ?: '';
+$host = getenv('MYSQLHOST') ?: getenv('MYSQL_HOST') ?: 'localhost';
+$user = getenv('MYSQLUSER') ?: getenv('MYSQL_USER') ?: 'root';
+$pass = getenv('MYSQLPASSWORD') ?: getenv('MYSQL_ROOT_PASSWORD') ?: '';
+$db   = getenv('MYSQLDATABASE') ?: getenv('MYSQL_DATABASE') ?: 'railway';
+$port = getenv('MYSQLPORT') ?: '3306';
 
-if ($url) {
-    $parts = parse_url($url);
-    $host     = $parts['host'];
-    $username = $parts['user'];
-    $password = $parts['pass'];
-    $dbname   = ltrim($parts['path'], '/');
-    $port     = $parts['port'] ?? 3306;
-} else {
-    $host     = getenv('MYSQLHOST') ?: 'localhost';
-    $username = getenv('MYSQLUSER') ?: 'root';
-    $password = getenv('MYSQLPASSWORD') ?: getenv('MYSQL_ROOT_PASSWORD') ?: '';
-    $dbname   = getenv('MYSQLDATABASE') ?: getenv('MYSQL_DATABASE') ?: 'railway';
-    $port     = getenv('MYSQLPORT') ?: 3306;
+$dsn  = "mysql:host=$host;port=$port;dbname=$db";
+try {
+    $pdo = new PDO($dsn, $user, $pass);
+    $connected = true;
+} catch (Exception $e) {
+    $connected = false;
+    $error = $e->getMessage();
 }
-
-$conn = new mysqli($host, $username, $password, $dbname, $port);
 ?>
 <!DOCTYPE html>
 <html>
@@ -37,14 +33,13 @@ p{color:#94a3b8;margin:8px 0;}
 </style>
 </head>
 <body>
-<?php if ($conn->connect_error): ?>
+<?php if (!$connected): ?>
 <div class="box fail">
   <h1>&#10007; Database Connection: FAILED</h1>
   <p>Could not connect to MySQL</p>
   <div class="detail">
-    <p>Error: <?= htmlspecialchars($conn->connect_error) ?></p>
+    <p>Error: <?= htmlspecialchars($error ?? 'Unknown') ?></p>
     <p>Host: <?= htmlspecialchars($host) ?></p>
-    <p>Port: <?= htmlspecialchars($port) ?></p>
   </div>
 </div>
 <?php else: ?>
@@ -55,13 +50,13 @@ p{color:#94a3b8;margin:8px 0;}
     <p>&#9679; Architecture: Two-Tier (Public + Private)</p>
     <p>&#9679; Web Tier: PHP Server (Public Subnet)</p>
     <p>&#9679; DB Tier: MySQL (Private/Internal Network)</p>
-    <p>&#9679; Database: <?= htmlspecialchars($dbname) ?></p>
+    <p>&#9679; Database: <?= htmlspecialchars($db) ?></p>
     <p>&#9679; Host: <?= htmlspecialchars($host) ?></p>
-    <p>&#9679; Security: DB not directly accessible from internet</p>
+    <p>&#9679; Security: DB unreachable from internet directly</p>
     <p>&#9679; Author: Subhasree M</p>
     <p>&#9679; Status: Verified &#10003;</p>
   </div>
 </div>
-<?php $conn->close(); endif; ?>
+<?php endif; ?>
 </body>
 </html>
